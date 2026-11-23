@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+      name="description" content="Arrange lists into groups based on various criteria."
+    />
+    <meta name="google-site-verification" content="GTdLRyC504UH7cWqFXL8EeI9Z3SLioKHCoy9SIIC_nA" />
+    <title>GroupWise – List Arranger</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <!-- Application header -->
+    <header>
+      <h1>GroupWise</h1>
+      <p>Enter a list. Choose how to arrange it. Download the result.</p>
+    </header>
+
+    <main>
+      <!-- Page tabs -->
+      <div class="tabs">
+        <button class="on" data-t="arr">Arrange list</button>
+        <button data-t="calc">Number planner</button>
+      </div>
+
+      <!-- List arranger -->
+            <section id="arr">
+        <!-- Step 1: Enter or upload the source list -->
+        <div class="card"><h2>1. Your list</h2>
+<textarea id="inp" placeholder="Type or paste items separated by commas or new lines: Amina, Brian, Cathy…"></textarea>
+<label>…or upload a file (.txt, .csv, .docx, .pdf)</label>
+<input type="file" id="file" accept=".txt,.csv,.docx,.pdf,image/*">
+<div class="msg" id="fmsg"></div>
+<label class="chk"><input type="checkbox" id="dedupe" checked>Remove duplicates</label>
+<button class="b ghost" id="shufList" type="button">Shuffle list</button>
+<div class="msg" id="count">0 items</div></div>
+
+        <!-- Step 2: Choose grouping rules -->
+        <div class="card"><h2>2. How should it be grouped?</h2>
+<div class="row">
+<div><label>List type</label><select id="cat"><option value="names">Names / people</option><option value="activities">Activities / tasks</option><option value="materials">Materials / assets</option></select></div>
+<div><label>Method</label><select id="mode"></select></div>
+<div><label>Group label</label><input type="text" id="lab" value="Group"></div></div>
+<div class="row">
+<div><label>Number of groups (optional)</label><input type="number" id="ng" min="1" placeholder="auto"></div>
+<div><label>Max per group</label><input type="number" id="mx" min="1" placeholder="e.g. 5"></div>
+<div><label>Min per group</label><input type="number" id="mn" min="1" placeholder="e.g. 3"></div></div>
+<div id="tgtBox"><label>Allocate to places / tasks / recipients (optional): comma or line separated. Add a capacity with a colon, e.g. Kitchen:5. If filled, every item is assigned to one of these instead of making groups.</label><textarea id="tgt" style="min-height:70px" placeholder="Reception:2, Kitchen:5, Housekeeping, Bar:3"></textarea>
+<label>Allocation style</label><select id="sty"><option value="rr">Spread one by one (1st to place 1, 2nd to place 2…)</option><option value="blocks">Fill place by place (first block to place 1, next block to place 2…)</option></select></div>
+<button class="b" id="go">🎲 Arrange randomly</button><button class="b alt" id="again">Arrange as given</button>
+<div class="msg" id="gmsg"></div></div>
+
+        <!-- Step 3: Review and export generated groups -->
+        <div class="card hide" id="out"><h2>3. Result</h2><div class="grid" id="res"></div>
+<button class="b" id="reshuf">Reshuffle</button><div id="dls"><button class="b alt" data-f="txt">TXT</button><button class="b alt" data-f="csv">CSV</button><button class="b alt" data-f="docx">Word (DOCX)</button><button class="b alt" data-f="pdf">PDF</button><button class="b alt" data-f="png">Image (PNG)</button><button class="b ghost" id="copy">Copy</button></div>
+<div class="msg" id="dmsg"></div></div>
+</section>
+
+      <!-- Number planner -->
+      <section id="calc" class="hide">
+        <div class="card"><h2>A. I have a number of items or people</h2>
+<label>Total items</label><input type="number" id="cn" min="1" placeholder="e.g. 23">
+<div class="scroll" id="cres"></div></div>
+<div class="card"><h2>B. I know the groups I want</h2>
+<div class="row"><div><label>Number of groups</label><input type="number" id="bg" min="1"></div><div><label>Items per group</label><input type="number" id="bs" min="1"></div><div><label>Items I have (optional)</label><input type="number" id="bh" min="0"></div></div>
+<div class="msg" id="bres"></div></div>
+</section>
+<p class="msg">Image upload needs OCR (text recognition), which a static site cannot run; type the list or upload a text, Word or PDF file instead.</p>
+</main>
+
+    <!-- Export libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- Application behavior -->
+    <script>
+      // Shared helpers and application state.
+      const $ = (s) => document.querySelector(s);
+      const $$ = (s) => [...document.querySelectorAll(s)];
+      const MODES = {
+        random: "Even groups",
+        alpha: "Alphabetical (by first letter)",
+      };
+const DEF={names:["random","Group"],activities:["random","Session"],materials:["random","Recipient"]};
+      let groups = [];
+
+      // Browser download helper.
+      const dl={save:async({filename,data})=>{const b=data instanceof Blob?data:new Blob([data]),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);return{status:"saved"}}};
+$("#mode").innerHTML=Object.entries(MODES).map(([k,v])=>`<option value="${k}">${v}</option>`).join("");
+function setCat(){const[d,l]=DEF[$("#cat").value];$("#mode").value=d;$("#lab").value=l}
+$("#cat").onchange=setCat;setCat();
+$$(".tabs button").forEach(b=>b.onclick=()=>{$$(".tabs button").forEach(x=>x.classList.toggle("on",x==b));$("#arr").classList.toggle("hide",b.dataset.t!="arr");$("#calc").classList.toggle("hide",b.dataset.t!="calc")});
+
+      // Parse and normalize list input.
+      function parse(t){let a=t.split(/\r?\n/).map(l=>l.replace(/^\s*(\d+[.)]|[-•*–])\s+/,"")).join(",").split(/[,;\t]+/).map(s=>s.trim()).filter(Boolean);
+ return a}
+function items(){let a=parse($("#inp").value);if($("#dedupe").checked){const s=new Set();a=a.filter(x=>{const k=x.toLowerCase();if(s.has(k))return false;s.add(k);return true})}return a}
+$("#inp").oninput=()=>$("#count").textContent=items().length+" items";
+
+      // Read supported uploaded files.
+      $("#file").onchange=async e=>{const f=e.target.files[0];if(!f)return;const m=$("#fmsg");m.textContent="Reading…";
+ try{const n=f.name.toLowerCase();let t="";
+  if(f.type.startsWith("image/"))throw Error("Images need OCR, which is not available here. Please type the list or use a text, Word or PDF file.");
+  if(n.endsWith(".docx"))t=(await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()})).value;
+  else if(n.endsWith(".pdf")){pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+   const d=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;
+   for(let i=1;i<=d.numPages;i++){const c=await(await d.getPage(i)).getTextContent();let y=null;c.items.forEach(it=>{const yy=it.transform[5];if(y!==null&&Math.abs(yy-y)>2)t+="\n";else if(y!==null)t+=" ";t+=it.str;y=yy});t+="\n"}}
+  else t=await f.text();
+  $("#inp").value=($("#inp").value?$("#inp").value+"\n":"")+t.trim();$("#inp").oninput();m.textContent="Loaded "+f.name}
+ catch(x){m.textContent="Could not read file: "+x.message}};
+
+const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+function sizes(n,g){const b=Math.floor(n/g),r=n%g;return Array.from({length:g},(_,i)=>b+(i<r?1:0))}
+      // Arrange items into groups or destination places.
+      function arrange(shuffle){const L=items(),n=L.length,w=[];$("#gmsg").className="msg";
+ if(!n){$("#gmsg").textContent="Please add some items first.";return}
+ const mode=$("#mode").value,lab=$("#lab").value||"Group";let ng=+$("#ng").value||0,mx=+$("#mx").value||0,mn=+$("#mn").value||0;
+ let G=[];
+ const t=parse($("#tgt").value).map(x=>{const m=x.match(/^(.*?)\s*[:=]\s*(\d+)$/);return m&&m[1]?{name:m[1],cap:+m[2]}:{name:x,cap:Infinity}});
+ if(t.length){const k=t.length,S=(shuffle?shuf(L):L).slice();G=t.map(x=>({name:x.name,items:[]}));let un=[];
+  if($("#sty").value=="blocks"){G.forEach((g,i)=>{if(t[i].cap<Infinity)g.items=S.splice(0,t[i].cap)});const U=G.filter((g,i)=>t[i].cap==Infinity);if(U.length){const sz=sizes(S.length,U.length);U.forEach((g,i)=>g.items=S.splice(0,sz[i]))}un=S}
+  else{let i=0;S.forEach(x=>{let tr=0;while(tr<k&&G[i%k].items.length>=t[i%k].cap){i++;tr++}if(tr>=k)un.push(x);else{G[i%k].items.push(x);i++}})}
+  G.forEach(g=>{if(mx&&g.items.length>mx)w.push(g.name+" exceeds max "+mx+".");if(mn&&g.items.length<mn)w.push(g.name+" is below min "+mn+".")});
+  if(un.length){G.push({name:"Unassigned",items:un});w.push(un.length+" item(s) did not fit the place capacities.")}}
+ else if(mode=="alpha"){const m={};L.slice().sort((a,b)=>a.localeCompare(b)).forEach(x=>{const c=x[0].toUpperCase();(m[c]=m[c]||[]).push(x)});
+  G=Object.keys(m).sort().map(c=>({name:c,items:m[c]}))}
+ else{let g=ng;if(!g)g=mx?Math.ceil(n/mx):Math.min(2,n);g=Math.max(1,Math.min(g,n));
+  if(mn&&!ng)while(g>1&&Math.floor(n/g)<mn)g--;
+  const sz=sizes(n,g);if(mn&&sz[sz.length-1]<mn)w.push("Cannot reach a minimum of "+mn+" per group with "+n+" items and "+g+" groups.");
+  if(mx&&sz[0]>mx)w.push("Group size "+sz[0]+" exceeds your max of "+mx+".");
+  const S=shuffle?shuf(L):L;let p=0;G=sz.map((s,i)=>({name:lab+" "+(i+1),items:S.slice(p,p+=s)}))}
+ groups=G;render();$("#gmsg").textContent=w.join(" ")||"Made "+G.length+" groups from "+n+" items.";if(w.length)$("#gmsg").className="msg warn"}
+$("#go").onclick=()=>arrange(true);$("#again").onclick=()=>arrange(false);
+$("#reshuf").onclick=()=>arrange(true);
+$("#shufList").onclick=()=>{const a=items();if(!a.length)return;$("#inp").value=shuf(a).join(", ");$("#inp").oninput()};
+
+const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function render(){$("#out").classList.remove("hide");$("#res").innerHTML=groups.map(g=>`<div class="g"><h3><span>${esc(g.name)}</span><span>${g.items.length}</span></h3><ul>${g.items.map(i=>`<li>${esc(i)}</li>`).join("")}</ul></div>`).join("")}
+
+      // Export formats.
+      const toTxt=()=>groups.map(g=>g.name+" ("+g.items.length+")\n"+g.items.map(i=>"  - "+i).join("\n")).join("\n\n");
+const q=s=>'"'+s.replace(/"/g,'""')+'"';
+const toCsv=()=>"Group,Item\n"+groups.flatMap(g=>g.items.map(i=>q(g.name)+","+q(i))).join("\n");
+async function toDocx(){const x=s=>esc(s).replace(/'/g,"&apos;");
+ const p=(t,b)=>`<w:p><w:r>${b?"<w:rPr><w:b/><w:color w:val=\"6D1030\"/></w:rPr>":""}<w:t xml:space="preserve">${x(t)}</w:t></w:r></w:p>`;
+ const body=p("Grouped list",1)+groups.map(g=>p(g.name+" ("+g.items.length+")",1)+g.items.map(i=>p("• "+i)).join("")).join("");
+ const z=new JSZip();
+ z.file("[Content_Types].xml",'<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
+ z.file("_rels/.rels",'<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
+ z.file("word/document.xml",'<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+body+"</w:body></w:document>");
+ return z.generateAsync({type:"blob"})}
+function toPdf(){const d=new jspdf.jsPDF(),W=210;let y=20;d.setFillColor(109,16,48);d.rect(0,0,W,12,"F");
+ groups.forEach(g=>{if(y>260){d.addPage();y=20}d.setFont(undefined,"bold");d.setTextColor(109,16,48);d.text(g.name+" ("+g.items.length+")",15,y);y+=7;d.setFont(undefined,"normal");d.setTextColor(30,10,20);
+  g.items.forEach(i=>{if(y>280){d.addPage();y=20}d.text("- "+i,20,y);y+=6});y+=5});return d.output("blob")}
+function toPng(){const cols=3,cw=300,gap=16,cv=document.createElement("canvas"),h=Array(cols).fill(20),pos=[];
+ groups.forEach(g=>{const c=h.indexOf(Math.min(...h)),ch=34+g.items.length*22+12;pos.push([c,h[c],ch]);h[c]+=ch+gap});
+ cv.width=cols*cw+(cols+1)*gap;cv.height=Math.max(...h)+10;const c=cv.getContext("2d");c.fillStyle="#fff";c.fillRect(0,0,cv.width,cv.height);
+ groups.forEach((g,i)=>{const[k,y,ch]=pos[i],x=gap+k*(cw+gap);c.fillStyle="#fbeef4";c.fillRect(x,y,cw,ch);c.fillStyle="#6d1030";c.fillRect(x,y,cw,34);
+  c.fillStyle="#fff";c.font="bold 16px sans-serif";c.fillText(g.name+" ("+g.items.length+")",x+10,y+22);c.fillStyle="#2b0a16";c.font="15px sans-serif";
+  g.items.forEach((t,j)=>c.fillText("• "+t.slice(0,34),x+12,y+56+j*22))});
+ return new Promise(r=>cv.toBlob(r,"image/png"))}
+
+$$("#dls [data-f]").forEach(b=>b.onclick=async()=>{const f=b.dataset.f,m=$("#dmsg");if(!dl){m.textContent="Downloads are not available in this view; use Copy instead.";return}
+ try{const data=f=="txt"?toTxt():f=="csv"?toCsv():f=="docx"?await toDocx():f=="pdf"?toPdf():await toPng();
+  await dl.save({filename:"groups."+f,data});m.textContent="Saved groups."+f}catch(e){m.textContent=e&&e.code=="declined"?"Save cancelled.":"Could not create "+f.toUpperCase()+": "+(e.message||e)}});
+$("#copy").onclick=async()=>{try{await navigator.clipboard.writeText(toTxt());$("#dmsg").textContent="Copied."}catch(e){$("#dmsg").textContent="Copy blocked; select the text manually."}};
+
+      // Number planner calculations.
+      $("#cn").oninput=()=>{const n=+$("#cn").value;if(n<1){$("#cres").innerHTML="";return}
+ let r="<table><tr><th>Groups</th><th>Sizes</th><th>Even?</th></tr>";
+ for(let g=1;g<=Math.min(n,40);g++){const b=Math.floor(n/g),rm=n%g;r+=`<tr><td>${g}</td><td>${rm?`${rm} × ${b+1}, ${g-rm} × ${b}`:`${g} × ${b}`}</td><td>${rm?"No":"Yes"}</td></tr>`}
+ $("#cres").innerHTML=r+"</table>"};
+function bcalc(){const g=+$("#bg").value,s=+$("#bs").value,h=$("#bh").value;if(!g||!s){$("#bres").textContent="";return}
+ const need=g*s;let t=`You need ${need} items/people (${g} groups × ${s}).`;
+ if(h!==""){const d=need-h;t+=d>0?` You are short by ${d}.`:d<0?` You have ${-d} extra; they could form ${Math.floor(-d/s)} more full group(s) with ${(-d)%s} left over.`:" That matches exactly."}
+ $("#bres").textContent=t}
+["#bg","#bs","#bh"].forEach(i=>$(i).oninput=bcalc);
+</script></body></html>

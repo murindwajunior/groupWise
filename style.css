@@ -1,0 +1,251 @@
+/* Theme variables */
+:root {
+  --bg: #fff;
+  --sf: #fbeef4;
+  --tx: #2b0a16;
+  --mu: #7a5666;
+  --ma: #6d1030;
+  --mg: #d6208f;
+  --bd: #ecc9da;
+  --on: #fff;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Use dark theme colors when the operating system prefers dark mode. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1a0710;
+    --sf: #2a0d1b;
+    --tx: #fbeaf2;
+    --mu: #c79bb0;
+    --ma: #e0527f;
+    --mg: #f04ab0;
+    --bd: #4a1b33;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #1a0710;
+  --sf: #2a0d1b;
+  --tx: #fbeaf2;
+  --mu: #c79bb0;
+  --ma: #e0527f;
+  --mg: #f04ab0;
+  --bd: #4a1b33;
+}
+
+/* Base layout */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-padding-top: env(safe-area-inset-top, 0px);
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--tx);
+  font: 15px/1.5 system-ui, Segoe UI, Arial, sans-serif;
+}
+
+header {
+  background: linear-gradient(120deg, #6d1030, #d6208f);
+  color: #fff;
+  padding: 22px 16px;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+header p {
+  margin: 4px 0 0;
+  opacity: 0.9;
+}
+
+main {
+  max-width: 980px;
+  margin: auto;
+  padding: 14px;
+}
+
+/* Tab navigation */
+.tabs {
+  display: flex;
+  gap: 6px;
+  margin: 6px 0 14px;
+}
+
+.tabs button {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid var(--bd);
+  background: var(--sf);
+  color: var(--tx);
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tabs button.on {
+  background: var(--ma);
+  color: #fff;
+  border-color: var(--ma);
+}
+
+/* Cards and form controls */
+.card {
+  background: var(--sf);
+  border: 1px solid var(--bd);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+
+h2 {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+  color: var(--ma);
+}
+
+label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--mu);
+  margin: 8px 0 3px;
+}
+
+textarea,
+input[type="number"],
+input[type="text"],
+select {
+  width: 100%;
+  padding: 9px;
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--tx);
+  font: inherit;
+}
+
+textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+button.b {
+  background: var(--mg);
+  color: #fff;
+  border: 0;
+  padding: 10px 16px;
+  border-radius: 9px;
+  font-weight: 700;
+  cursor: pointer;
+  margin: 8px 6px 0 0;
+}
+
+button.b.alt {
+  background: var(--ma);
+}
+
+button.b.ghost {
+  background: transparent;
+  color: var(--ma);
+  border: 1px solid var(--ma);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.chk {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 0.9rem;
+  margin: 8px 14px 0 0;
+  color: var(--tx);
+}
+
+.chk input {
+  width: auto;
+}
+
+/* Generated group cards */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.g {
+  background: var(--bg);
+  border: 1px solid var(--bd);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.g h3 {
+  margin: 0;
+  padding: 8px 10px;
+  background: var(--ma);
+  color: #fff;
+  font-size: 0.95rem;
+  display: flex;
+  justify-content: space-between;
+}
+
+.g ul {
+  margin: 0;
+  padding: 8px 10px 8px 26px;
+}
+
+.msg {
+  font-size: 0.88rem;
+  color: var(--mu);
+  margin-top: 6px;
+}
+
+.warn {
+  color: var(--mg);
+  font-weight: 600;
+}
+
+/* Number planner table */
+.scroll {
+  overflow-x: auto;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.9rem;
+}
+
+td,
+th {
+  border-bottom: 1px solid var(--bd);
+  padding: 6px 8px;
+  text-align: left;
+}
+
+th {
+  color: var(--ma);
+}
+
+.hide {
+  display: none;
+}
