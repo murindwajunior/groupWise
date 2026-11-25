@@ -1,4 +1,4 @@
-/* Theme variables */
+/* Default (light) theme variables and safe-area spacing. */
 :root {
   --bg: #fff;
   --sf: #fbeef4;
@@ -13,7 +13,7 @@
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* Use dark theme colors when the operating system prefers dark mode. */
+/* Automatic dark colors for devices using dark mode. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #1a0710;
@@ -26,6 +26,7 @@
   }
 }
 
+/* Manually selected dark theme. */
 :root[data-theme="dark"] {
   --bg: #1a0710;
   --sf: #2a0d1b;
@@ -36,7 +37,7 @@
   --bd: #4a1b33;
 }
 
-/* Base layout */
+/* Base reset and page typography. */
 * {
   box-sizing: border-box;
 }
@@ -52,23 +53,26 @@ body {
   font: 15px/1.5 system-ui, Segoe UI, Arial, sans-serif;
 }
 
+/* Header and theme button. */
 header {
   background: linear-gradient(120deg, #6d1030, #d6208f);
   color: #fff;
   padding: 22px 16px;
+  position: relative;
 }
 
-/* Keep the theme button compact and positioned in the header. */
 #theme {
-  float: right;
-  margin-top: -4px;
-  padding: 7px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.12);
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: rgba(255, 255, 255, 0.2);
   color: #fff;
-  font: 600 0.85rem system-ui, Segoe UI, Arial, sans-serif;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 20px;
+  padding: 6px 12px;
   cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
 }
 
 header h1 {
@@ -81,13 +85,13 @@ header p {
   opacity: 0.9;
 }
 
+/* Page layout and top tabs. */
 main {
   max-width: 980px;
   margin: auto;
   padding: 14px;
 }
 
-/* Tab navigation */
 .tabs {
   display: flex;
   gap: 6px;
@@ -111,7 +115,7 @@ main {
   border-color: var(--ma);
 }
 
-/* Cards and form controls */
+/* Cards, headings, and form controls. */
 .card {
   background: var(--sf);
   border: 1px solid var(--bd);
@@ -157,6 +161,7 @@ textarea {
   gap: 10px;
 }
 
+/* Action button variants. */
 button.b {
   background: var(--mg);
   color: #fff;
@@ -196,7 +201,7 @@ button:disabled {
   width: auto;
 }
 
-/* Generated group cards */
+/* Generated result cards. */
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
@@ -226,6 +231,7 @@ button:disabled {
   padding: 8px 10px 8px 26px;
 }
 
+/* Status messages and number-planner table. */
 .msg {
   font-size: 0.88rem;
   color: var(--mu);
@@ -237,7 +243,6 @@ button:disabled {
   font-weight: 600;
 }
 
-/* Number planner table */
 .scroll {
   overflow-x: auto;
 }
@@ -259,6 +264,7 @@ th {
   color: var(--ma);
 }
 
+/* Utility class for hiding inactive tabs and sections. */
 .hide {
   display: none;
 }
