@@ -1,2 +1,2 @@
 markdown
-[visit my website](https://gropwise.jndeployments.site/)
+[visit my website](https://groupwise.jndeployments.site/)
